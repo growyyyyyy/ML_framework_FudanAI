@@ -1,6 +1,6 @@
 import networkx as nx
 
-from mini_causal.graph import CausalDAG
+from src.graph import CausalDAG
 
 def select_backdoor(dag: CausalDAG, treat: str, outcome: str):
     G = dag.g.to_undirected()
