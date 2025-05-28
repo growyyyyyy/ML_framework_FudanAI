@@ -1,6 +1,6 @@
-from identification import select_backdoor
-from estimation import PropensityScoreWeighting
-from refutation import add_random_confounder, subset_refuter
+from src.identification import select_backdoor
+from src.estimation import PropensityScoreWeighting
+from src.refutation import add_random_confounder, subset_refuter
 
 class CausalModel:
     def __init__(self, data, dag, treatment, outcome):
