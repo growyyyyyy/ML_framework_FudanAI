@@ -119,6 +119,12 @@ class CausalModel:
         individual_effects : array-like
             每个个体的处理效应估计
         """
+        # 分离估计参数和构造函数参数
+        estimate_params = {
+            'bootstrap_rounds': kw.pop('bootstrap_rounds', 200),
+            'alpha': kw.pop('alpha', 0.05)
+        }
+        
         # 准备数据
         valid_adjustment_set = [var for var in getattr(self, 'adjustment_set', []) if var in self.data.columns]
         
@@ -138,6 +144,7 @@ class CausalModel:
             raise ValueError(f"方法 '{method}' 不支持异质性效应估计。支持的方法: {heterogeneous_methods}")
         
         estimator_class = self.available_methods[method]
+        # 只传递构造函数参数给估计器
         estimator = estimator_class(**kw)
         
         # 估计条件处理效应

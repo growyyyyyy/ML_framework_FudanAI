@@ -45,8 +45,9 @@ class CausalEstimator(ABC):
         """Bootstrap置信区间"""
         n_samples = len(y)
         bootstrap_ates = []
+        failed_count = 0
         
-        for _ in range(n_bootstrap):
+        for i in range(n_bootstrap):
             # 重采样
             indices = np.random.choice(n_samples, n_samples, replace=True)
             X_boot = X.iloc[indices] if hasattr(X, 'iloc') else X[indices]
@@ -57,8 +58,19 @@ class CausalEstimator(ABC):
             try:
                 ate_boot, _ = self._estimate_ate(X_boot, w_boot, y_boot)
                 bootstrap_ates.append(ate_boot)
-            except:
+            except Exception as e:
+                failed_count += 1
+                # 只在前5次失败时显示错误，避免过多输出
+                if failed_count <= 5:
+                    print(f"Bootstrap round {i+1} failed: {e}")
                 continue
+        
+        # 检查是否有足够的成功bootstrap样本
+        if len(bootstrap_ates) == 0:
+            print(f"警告：所有 {n_bootstrap} 次bootstrap都失败了，无法计算置信区间")
+            return (np.nan, np.nan)
+        elif len(bootstrap_ates) < n_bootstrap * 0.5:
+            print(f"警告：只有 {len(bootstrap_ates)}/{n_bootstrap} 次bootstrap成功，置信区间可能不可靠")
         
         bootstrap_ates = np.array(bootstrap_ates)
         lower = np.percentile(bootstrap_ates, 100 * alpha / 2)

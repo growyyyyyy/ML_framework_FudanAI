@@ -41,6 +41,9 @@ class CausalForestEstimator(CausalEstimator, MLModelMixin):
         # 训练因果森林
         self._fit_causal_forest(X, w, y)
         
+        # 设置拟合状态，这样predict_treatment_effects就能工作了
+        self.fitted_ = True
+        
         # 预测个体处理效应
         individual_effects = self.predict_treatment_effects(X)
         
@@ -52,7 +55,6 @@ class CausalForestEstimator(CausalEstimator, MLModelMixin):
         
         self.ate_ = ate
         self.ate_ci_ = ci
-        self.fitted_ = True
         
         return ate, ci
     
