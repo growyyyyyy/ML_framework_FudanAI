@@ -46,13 +46,15 @@ class ImprovedPropensityScoreWeighting(CausalEstimator, MLModelMixin):
     """改进的倾向评分加权估计器，支持多种ML算法"""
     
     def __init__(self, propensity_model='logistic', auto_select_model=False, 
-                 trim_threshold=0.05, normalize_weights=True, random_state=42):
+                 trim_threshold=0.05, normalize_weights=True, bootstrap_strategy='lightweight',
+                 random_state=42):
         super().__init__(random_state)
         MLModelMixin.__init__(self)
         self.propensity_model = propensity_model
         self.auto_select_model = auto_select_model
         self.trim_threshold = trim_threshold
         self.normalize_weights = normalize_weights
+        self.bootstrap_strategy = bootstrap_strategy  # 'reuse', 'lightweight', 'full'
         self.propensity_estimator_ = None
         self.propensity_scores_ = None
         
@@ -85,17 +87,50 @@ class ImprovedPropensityScoreWeighting(CausalEstimator, MLModelMixin):
         """内部ATE估计方法"""
         X = self._preprocess_features(X)
         
-        # 如果已经有训练好的模型，重用它而不是重新选择
         if hasattr(self, 'propensity_estimator_') and self.propensity_estimator_ is not None:
-            # 重用已选择的最佳模型，但用新数据重新训练
-            estimator = clone(self.propensity_estimator_)
-            estimator.fit(X, w)
-            
-            if hasattr(estimator, 'predict_proba'):
-                propensity_scores = estimator.predict_proba(X)[:, 1]
+            if self.auto_select_model:
+                if self.bootstrap_strategy == 'full':
+                    # 完整的模型选择（最准确但最慢）
+                    propensity_scores = self._estimate_propensity_scores(X, w)
+                elif self.bootstrap_strategy == 'lightweight':
+                    # 轻量级模型选择（平衡准确性和速度）
+                    models = {
+                        'logistic': self.get_model('logistic', 'classification'),
+                        'random_forest': self.get_model('random_forest', 'classification'),
+                        'gradient_boosting': self.get_model('gradient_boosting', 'classification'),
+                        'xgboost': self.get_model('xgboost', 'classification')
+                    }
+                    best_model, _ = self._select_best_model_silent(models, X, w, cv=3, scoring='roc_auc')
+                    estimator = best_model
+                    estimator.fit(X, w)
+                    
+                    if hasattr(estimator, 'predict_proba'):
+                        propensity_scores = estimator.predict_proba(X)[:, 1]
+                    else:
+                        propensity_scores = estimator.decision_function(X)
+                        propensity_scores = 1 / (1 + np.exp(-propensity_scores))
+                else:  # 'reuse'
+                    # 重用模型（最快但可能不够准确）
+                    from sklearn.base import clone
+                    estimator = clone(self.propensity_estimator_)
+                    estimator.fit(X, w)
+                    
+                    if hasattr(estimator, 'predict_proba'):
+                        propensity_scores = estimator.predict_proba(X)[:, 1]
+                    else:
+                        propensity_scores = estimator.decision_function(X)
+                        propensity_scores = 1 / (1 + np.exp(-propensity_scores))
             else:
-                propensity_scores = estimator.decision_function(X)
-                propensity_scores = 1 / (1 + np.exp(-propensity_scores))
+                # 非自动选择模式，直接重用模型类型
+                from sklearn.base import clone
+                estimator = clone(self.propensity_estimator_)
+                estimator.fit(X, w)
+                
+                if hasattr(estimator, 'predict_proba'):
+                    propensity_scores = estimator.predict_proba(X)[:, 1]
+                else:
+                    propensity_scores = estimator.decision_function(X)
+                    propensity_scores = 1 / (1 + np.exp(-propensity_scores))
         else:
             # 如果没有预训练的模型，进行完整的估计过程
             propensity_scores = self._estimate_propensity_scores(X, w)
