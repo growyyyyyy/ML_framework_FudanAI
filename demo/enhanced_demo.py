@@ -18,7 +18,7 @@ def main():
     
     # 1. 数据准备
     print("1. 数据准备...")
-    df_raw = load_and_clean("e_commerce/EComm.csv")
+    df_raw = load_and_clean("demo/e_commerce/EComm.csv")
     df = preprocess_ecommerce_data(df_raw)
     print(f"数据shape: {df.shape}")
     print(f"HighlyDissatisfied分布: {df['HighlyDissatisfied'].value_counts().to_dict()}")

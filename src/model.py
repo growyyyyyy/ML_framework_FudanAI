@@ -2,10 +2,10 @@ from src.identification import select_backdoor
 from src.refutation import add_random_confounder, subset_refuter
 
 # 导入所有新的估计器
-from src.estimators.propensity_score import PropensityScoreWeighting, ImprovedPropensityScoreWeighting
-from src.estimators.meta_learners import SLearner, TLearner, XLearner, RLearner
-from src.estimators.double_ml import DoubleMLEstimator
-from src.estimators.causal_forest import CausalForestEstimator
+from src.modern_estimators.propensity_score import PropensityScoreWeighting, ImprovedPropensityScoreWeighting
+from src.modern_estimators.meta_learners import SLearner, TLearner, XLearner, RLearner
+from src.modern_estimators.double_ml import DoubleMLEstimator
+from src.modern_estimators.causal_forest import CausalForestEstimator
 
 class CausalModel:
     def __init__(self, data, dag, treatment, outcome, observed_vars=None):
