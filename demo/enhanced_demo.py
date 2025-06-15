@@ -67,8 +67,8 @@ def main():
         's_learner',
         't_learner',
         'x_learner',
-        'double_ml',
-        'causal_forest'
+        # 'double_ml',
+        # 'causal_forest'
     ]
     
     results = cm.compare_methods(
@@ -188,10 +188,12 @@ def main():
         cis_upper = [valid_results[m]['ci'][1] for m in methods]
         ci_widths = [valid_results[m]['ci_width'] for m in methods]
         
-        # ATE点估计和置信区间
+        # 计算误差条长度，确保为非负值
+        lower_errors = np.abs(np.array(ates) - np.array(cis_lower))
+        upper_errors = np.abs(np.array(cis_upper) - np.array(ates))
+        
         ax1.errorbar(range(len(methods)), ates, 
-                    yerr=[np.array(ates) - np.array(cis_lower), 
-                          np.array(cis_upper) - np.array(ates)],
+                    yerr=[lower_errors, upper_errors],
                     fmt='o', capsize=5, capthick=2)
         ax1.set_xticks(range(len(methods)))
         ax1.set_xticklabels(methods, rotation=45, ha='right')
