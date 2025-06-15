@@ -67,8 +67,8 @@ def main():
         's_learner',
         't_learner',
         'x_learner',
-        # 'double_ml',
-        # 'causal_forest'
+        'double_ml',
+        'causal_forest'
     ]
     
     results = cm.compare_methods(
@@ -207,7 +207,7 @@ def main():
         ax2.set_xticks(range(len(methods)))
         ax2.set_xticklabels(methods, rotation=45, ha='right')
         ax2.set_ylabel('Confidence Interval Width')
-        ax2.set_title('Precision Comparison (Smaller is Better)')
+        ax2.set_title('Precision Comparison')
         ax2.grid(True, alpha=0.3)
         
         plt.tight_layout()
